@@ -8,14 +8,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TaskStatisticsCache {
 
     private static final Logger log = LoggerFactory.getLogger(TaskStatisticsCache.class);
+    private final Map<String, TaskStatsResponse> cache = new ConcurrentHashMap<>();
 
     public TaskStatsResponse compute(List<Task> tasks) {
-        log.info("[SINGLETON] TaskStatisticsCache instance #{} computing stats",
+        return cache.computeIfAbsent("stats", k -> {
+            log.info("[SINGLETON] TaskStatisticsCache instance #{} computing stats",
+                    System.identityHashCode(this));
+            return calculate(tasks);
+        });
+    }
+
+    public void invalidate() {
+        cache.clear();
+        log.info("[SINGLETON] TaskStatisticsCache instance #{} cache invalidated",
                 System.identityHashCode(this));
+    }
+
+    private TaskStatsResponse calculate(List<Task> tasks) {
         return TaskStatsResponse.builder()
                 .total(tasks.size())
                 .todo(countByStatus(tasks, TaskStatus.TODO))

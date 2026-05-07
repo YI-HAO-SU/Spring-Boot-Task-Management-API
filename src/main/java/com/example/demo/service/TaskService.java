@@ -33,7 +33,9 @@ public class TaskService {
 
     public TaskResponse createTask(TaskRequest request) {
         Task task = TaskFactory.createTask(request);
-        return TaskResponse.from(taskRepository.save(task));
+        TaskResponse response = TaskResponse.from(taskRepository.save(task));
+        statsCache.invalidate();
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -57,7 +59,9 @@ public class TaskService {
         if (request.getPriority() != null) task.setPriority(request.getPriority());
         if (request.getTaskType() != null) task.setTaskType(request.getTaskType());
         task.setDueDate(request.getDueDate());
-        return TaskResponse.from(taskRepository.save(task));
+        TaskResponse response = TaskResponse.from(taskRepository.save(task));
+        statsCache.invalidate();
+        return response;
     }
 
     public TaskResponse updateTaskStatus(Long id, TaskStatusUpdateRequest request) {
@@ -65,12 +69,14 @@ public class TaskService {
         TaskStatus previousStatus = task.getStatus();
         task.setStatus(request.getStatus());
         Task saved = taskRepository.save(task);
+        statsCache.invalidate();
         eventPublisher.publishEvent(new TaskStatusChangedEvent(this, saved, previousStatus));
         return TaskResponse.from(saved);
     }
 
     public void deleteTask(Long id) {
         taskRepository.delete(findOrThrow(id));
+        statsCache.invalidate();
     }
 
     @Transactional(readOnly = true)
