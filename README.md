@@ -1,8 +1,10 @@
-# Task Manager REST API
+# Task Manager RESTful API
 
 ## 專案概述
 
-一個用 **Spring Boot 3.4 + Java 21** 實作的任務管理 REST API，**重點在於展示四個核心設計模式的實務應用與清潔架構設計**，而不是複雜的任務排程引擎。
+一個用 **Spring Boot 3.4 + Java 21** 實作的任務管理 RESTful API，**重點在於展示四個核心設計模式的實務應用與清潔架構設計**，而不是複雜的任務排程引擎。
+
+資料庫使用 **PostgreSQL 16**，透過 Docker Compose 部署，模擬真實生產環境的資料持久化。
 
 ### 設計理念
 
@@ -16,6 +18,7 @@
 
 - ✅ **完整 REST API** — 任務的 CRUD 操作 + 統計功能
 - ✅ **四大設計模式** — Factory / Observer / Strategy / Singleton
+- ✅ **PostgreSQL 資料庫** — Docker Compose 部署，資料持久化
 - ✅ **自動 API 文件** — Swagger UI (`/swagger-ui.html`)
 - ✅ **容器化** — Docker image 可部署到 Kubernetes 或任何雲平台
 - ✅ **統一錯誤處理** — `@RestControllerAdvice` 攔截所有例外
@@ -70,7 +73,7 @@ Service (業務邏輯)
     ↓
 Repository (資料存取)
     ↓
-Database (H2 開發 / PostgreSQL 正式)
+Database (PostgreSQL)
 ```
 
 ---
@@ -144,26 +147,37 @@ public TaskStatisticsCache taskStatisticsCache() {
 
 ## 快速開始
 
-### 方式一：直接執行 JAR
+### 前置需求
+
+- Java 21
+- Maven
+- Docker（用於啟動 PostgreSQL）
+
+### 步驟一：啟動 PostgreSQL
 
 ```bash
-# 打包
-mvn clean package
+docker-compose up -d
+```
 
-# 執行
+這會在背景啟動 PostgreSQL 16（`localhost:5432`，DB: `taskdb`，user/password: `postgres`）。
+
+### 步驟二：執行應用程式
+
+```bash
+# 打包並執行
+mvn clean package -DskipTests
 java -jar target/demo-0.0.1-SNAPSHOT.jar
 ```
 
 訪問 `http://localhost:8080/swagger-ui.html`
 
-### 方式二：Docker 執行（推薦）
+### 方式二：Docker Compose 全棧啟動（推薦）
 
 ```bash
-# 建立 image
+# 同時啟動 DB + 應用
+docker-compose up -d
 docker build -t task-manager:latest .
-
-# 執行容器
-docker run -p 8080:8080 task-manager:latest
+docker run -p 8080:8080 --network host task-manager:latest
 ```
 
 ### 方式三：Kubernetes 部署
@@ -243,7 +257,7 @@ curl http://localhost:8080/api/tasks/stats
 
 - **Language**: Java 21
 - **Framework**: Spring Boot 3.4.5
-- **Database**: H2 (development) / PostgreSQL (production)
+- **Database**: PostgreSQL 16 (via Docker Compose)
 - **ORM**: Spring Data JPA + Hibernate
 - **API Docs**: Springdoc OpenAPI (Swagger UI)
 - **Build**: Maven
@@ -252,5 +266,5 @@ curl http://localhost:8080/api/tasks/stats
 ## OTHERS
 
 - Swagger UI 可視化測試：`http://localhost:8080/swagger-ui.html`
-- H2 Console 檢視資料庫：`http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:taskdb`)
 - API 文件：`http://localhost:8080/api-docs`
+- 資料庫連線：`jdbc:postgresql://localhost:5432/taskdb`（user: `postgres` / password: `postgres`）
